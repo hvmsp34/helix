@@ -562,6 +562,56 @@ Usage: Run with `cargo xtask <task>`, eg. `cargo xtask docgen`.
     }
 }
 
+pub mod custom {
+    use crate::DynError;
+    use std::process::{Command, Stdio};
+
+    pub fn handle_sync() -> Result<(), DynError> {
+        println!("=== Синхронизация форка с оригинальным репозиторием ===");
+
+        run_cmd("git", &["checkout", "master"])?;
+        run_cmd("git", &["fetch", "upstream"])?;
+        run_cmd("git", &["reset", "--hard", "upstream/master"])?;
+        run_cmd("git", &["push", "origin", "master", "--force"])?;
+        run_cmd("git", &["push", "gitverse", "master", "--force"])?;
+
+        println!("=== Синхронизация успешно завершена! ===");
+        Ok(())
+    }
+
+    pub fn handle_rebase() -> Result<(), DynError> {
+        println!("=== Накатываем обновления из master на рабочую ветку ===");
+        let my_branch = "custome-feature";
+        run_cmd("git", &["checkout", my_branch])?;
+        run_cmd("git", &["rebase", "master"])?;
+        run_cmd("git", &["push", "origin", my_branch, "--force-with-lease"])?;
+        run_cmd("cargo", &["build", "--profile", "opt"])?;
+
+        println!("=== Все операции успешно выполнены! Оптимизированный релиз собран. ===");
+        Ok(())
+    }
+
+    pub fn run_cmd(program: &str, args: &[&str]) -> Result<(), DynError> {
+        println!("> Выполнение: {} {}", program, args.join(" "));
+        let status = Command::new(program)
+            .args(args)
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()?;
+
+        if status.success() {
+            Ok(())
+        } else {
+            Err(format!(
+                "Команда '{} {}' завершилась с ошибкой",
+                program,
+                args.join(" ")
+            )
+            .into())
+        }
+    }
+}
+
 fn main() -> Result<(), DynError> {
     let mut args = env::args().skip(1);
     let task = args.next();
@@ -573,6 +623,8 @@ fn main() -> Result<(), DynError> {
             "indent-check" => tasks::indentcheck(args)?,
             "highlight-check" => tasks::highlightcheck(args)?,
             "theme-check" => tasks::themecheck(args)?,
+            "sync" => custom::handle_sync()?,
+            "rebase" => custom::handle_rebase()?,
             invalid => return Err(format!("Invalid task name: {}", invalid).into()),
         },
     };
