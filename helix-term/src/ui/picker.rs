@@ -1087,16 +1087,16 @@ impl<I: 'static + Send + Sync, D: 'static + Send + Sync> Component for Picker<I,
         };
 
         match key_event {
-            shift!(Tab) | key!(Up) | ctrl!('p') => {
+            shift!(Tab) | key!(Up) | ctrl!('l') => {
                 self.move_by(1, Direction::Backward);
             }
-            key!(Tab) | key!(Down) | ctrl!('n') => {
+            key!(Tab) | key!(Down) | ctrl!('k') => {
                 self.move_by(1, Direction::Forward);
             }
-            key!(PageDown) | ctrl!('d') => {
+            key!(PageDown) | alt!('l') => {
                 self.page_down();
             }
-            key!(PageUp) | ctrl!('u') => {
+            key!(PageUp) | alt!('k') => {
                 self.page_up();
             }
             key!(Home) => {
